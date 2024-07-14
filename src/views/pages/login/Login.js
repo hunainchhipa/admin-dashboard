@@ -61,6 +61,7 @@ const Login = () => {
         displayName: user.displayName,
         email: user.email,
       })
+      navigate('/')
 
       if (response.status === 200) {
         // Handle successful login (e.g., store token, redirect)
