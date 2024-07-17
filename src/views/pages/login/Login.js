@@ -27,6 +27,19 @@ const Login = () => {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
+  const fetchAccessRights = async (token) => {
+    try {
+      const response = await axios.get('http://192.168.1.217:8000/api/access-rights', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      localStorage.setItem('access_rights', JSON.stringify(response.data.data))
+    } catch (error) {
+      console.error('Error fetching access rights:', error)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -39,8 +52,13 @@ const Login = () => {
       })
 
       // Handle successful login (e.g., store token, redirect)
-      localStorage.setItem('access_token', response?.data?.token)
-      localStorage.setItem('uid', response?.data?.uid)
+      const { token, uid } = response.data
+      localStorage.setItem('access_token', token)
+      localStorage.setItem('uid', uid)
+
+      // Fetch and store access rights
+      await fetchAccessRights(token)
+
       navigate('/')
     } catch (error) {
       setError('Failed to log in')
@@ -61,10 +79,16 @@ const Login = () => {
         displayName: user.displayName,
         email: user.email,
       })
-      navigate('/')
 
       if (response.status === 200) {
-        // Handle successful login (e.g., store token, redirect)
+        const { token, uid } = response.data
+        localStorage.setItem('access_token', token)
+        localStorage.setItem('uid', uid)
+
+        // Fetch and store access rights
+        await fetchAccessRights(token)
+
+        navigate('/')
       }
     } catch (error) {
       setError('Failed to sign in with Google')

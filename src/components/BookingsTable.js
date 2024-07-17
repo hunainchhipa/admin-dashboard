@@ -59,6 +59,8 @@ const BookingsTable = () => {
         end_date: booking.end_date,
       }))
 
+      debugger
+
       setBookings(transformedBookings)
     } catch (error) {
       console.error('Error fetching bookings:', error)

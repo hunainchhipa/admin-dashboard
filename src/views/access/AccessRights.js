@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Form, FormGroup, Label, Input, Button, Table } from 'reactstrap'
-import generateDemoData from '../../utils/generateDemoData' // Replace with actual data generation for users
+import { FormGroup, Input, Button, Table } from 'reactstrap'
+import axios from 'axios'
 
 const AccessRights = () => {
   const [users, setUsers] = useState([])
@@ -8,13 +8,36 @@ const AccessRights = () => {
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    const data = generateDemoData(10) // Generate 10 demo users
-    setUsers(data)
-    const initialAccessRights = data.reduce((acc, user) => {
-      acc[user.id] = { dashboard: true, user: false, customer: false, sale: false }
-      return acc
-    }, {})
-    setAccessRights(initialAccessRights)
+    const fetchUsers = async () => {
+      const token = localStorage.getItem('access_token')
+      try {
+        const response = await axios.get('http://192.168.1.217:8000/api/users', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            role: 'librarian',
+          },
+        })
+        const data = response.data.data
+        setUsers(data)
+        const initialAccessRights = data.reduce((acc, user) => {
+          acc[user.id] = {
+            dashboard: true,
+            librarian: false,
+            user: false,
+            booking: false,
+            books: false,
+            googleBooks: false,
+          }
+          return acc
+        }, {})
+        setAccessRights(initialAccessRights)
+      } catch (error) {
+        console.error('Error fetching users:', error)
+      }
+    }
+    fetchUsers()
   }, [])
 
   const handleAccessChange = (userId, section) => {
@@ -27,9 +50,23 @@ const AccessRights = () => {
     }))
   }
 
-  const handleSave = () => {
-    // Save access rights to backend or local storage
-    console.log('Access rights saved:', accessRights)
+  const handleSave = async () => {
+    const token = localStorage.getItem('access_token')
+    try {
+      debugger
+      const response = await axios.post(
+        'http://192.168.1.217:8000/api/access-rights',
+        accessRights,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      console.log('Access rights saved:', response.data)
+    } catch (error) {
+      console.error('Error saving access rights:', error)
+    }
   }
 
   const handleSearchChange = (event) => {
@@ -56,9 +93,11 @@ const AccessRights = () => {
           <tr>
             <th>User</th>
             <th>Dashboard</th>
+            <th>Librarian</th>
             <th>User</th>
-            <th>Customer</th>
-            <th>Sale</th>
+            <th>Booking</th>
+            <th>Books</th>
+            <th>Google Books</th>
           </tr>
         </thead>
         <tbody>
@@ -75,6 +114,13 @@ const AccessRights = () => {
               <td>
                 <Input
                   type="checkbox"
+                  checked={accessRights[user.id]?.librarian}
+                  onChange={() => handleAccessChange(user.id, 'librarian')}
+                />
+              </td>
+              <td>
+                <Input
+                  type="checkbox"
                   checked={accessRights[user.id]?.user}
                   onChange={() => handleAccessChange(user.id, 'user')}
                 />
@@ -82,15 +128,22 @@ const AccessRights = () => {
               <td>
                 <Input
                   type="checkbox"
-                  checked={accessRights[user.id]?.customer}
-                  onChange={() => handleAccessChange(user.id, 'customer')}
+                  checked={accessRights[user.id]?.booking}
+                  onChange={() => handleAccessChange(user.id, 'booking')}
                 />
               </td>
               <td>
                 <Input
                   type="checkbox"
-                  checked={accessRights[user.id]?.sale}
-                  onChange={() => handleAccessChange(user.id, 'sale')}
+                  checked={accessRights[user.id]?.books}
+                  onChange={() => handleAccessChange(user.id, 'books')}
+                />
+              </td>
+              <td>
+                <Input
+                  type="checkbox"
+                  checked={accessRights[user.id]?.googleBooks}
+                  onChange={() => handleAccessChange(user.id, 'googleBooks')}
                 />
               </td>
             </tr>
